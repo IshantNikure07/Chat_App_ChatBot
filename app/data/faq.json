@@ -1,0 +1,46 @@
+[
+  {
+    "question": "How do I add a friend?",
+    "answer": "Open the Friends tab in Bubble and click the 'Add Friend' button. Enter their username or scan their Bubble QR code."
+  },
+  {
+    "question": "How do I change password?",
+    "answer": "Go to Settings > Security > Change Password in your Bubble app settings to update your password."
+  },
+  {
+    "question": "Why am I not receiving notifications?",
+    "answer": "Please check your system-level notification permissions for Bubble. Go to Settings > Notifications on your device, and ensure notifications are enabled."
+  },
+  {
+    "question": "What is Bubble?",
+    "answer": "Bubble is a modern, real-time messaging and chatting application designed to help you stay connected with friends, family, and colleagues instantly and securely."
+  },
+  {
+    "question": "How do I start a new chat?",
+    "answer": "To start a new chat, tap the chat bubble icon or 'New Chat' button on the Chats screen, select a contact from your friend list, and start typing your message."
+  },
+  {
+    "question": "Can I send photos, videos, or documents?",
+    "answer": "Yes! In any Bubble chat, tap the paperclip (+) icon next to the message input box. You can attach photos, videos, voice recordings, and various document files."
+  },
+  {
+    "question": "How do I create a group chat?",
+    "answer": "Go to the Chats tab, click on the options menu (three dots or new chat icon), select 'New Group', add the members you want to include, set a group name/photo, and tap create."
+  },
+  {
+    "question": "Is my data secure on Bubble?",
+    "answer": "Security is our priority at Bubble. We use industry-standard encryption protocols to protect your chats, media, and profile information from unauthorized access."
+  },
+  {
+    "question": "How do I block or unblock someone?",
+    "answer": "To block a user, open their profile or chat settings, scroll down, and select 'Block'. To unblock someone, go to Settings > Privacy > Blocked Contacts, and tap 'Unblock' next to their name."
+  },
+  {
+    "question": "Can I use Bubble on multiple devices?",
+    "answer": "Yes, Bubble supports multi-device synchronization. You can log into your account on web or desktop app versions, and your chats will sync in real-time."
+  },
+  {
+    "question": "Is Bubble free to use?",
+    "answer": "Yes, Bubble is completely free to download and use for standard text messaging, voice calls, and video calls. Standard cellular data charges may apply depending on your network provider."
+  }
+]
