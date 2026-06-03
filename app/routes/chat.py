@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.post("/chat")
 async def chat(request: ChatRequest):
-    answer = ask_question(request.message)
+    answer = ask_question(request.message, sender_id=request.sender_id)
 
     return {
         "success": True,
