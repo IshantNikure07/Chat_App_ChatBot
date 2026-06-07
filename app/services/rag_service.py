@@ -6,6 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from app.tools.search_friend import search_friends
 from app.tools.send_message_tool import send_message
+from app.tools.create_conversation import create_conversation
 
 # Load environment variables
 load_dotenv()
@@ -24,16 +25,29 @@ def search_friends_tool(name: str) -> str:
     return search_friends(name)
 
 @tool
-def send_message_tool(message: str, receiver_id: str, sender_id: str) -> str:
+def create_conversation_tool(type: str, receiver_id: str, sender_id: str) -> str:
+    """
+    Create a conversation between two users.
+    You must provide:
+    - type: the type of conversation (use 'direct' for one-on-one conversation)
+    - receiver_id: the ID of the recipient user (get this by first calling search_friends_tool)
+    - sender_id: the ID of the current user sending the message
+    Returns a JSON string containing the conversation details, including 'conversationId'.
+    """
+    return create_conversation(type=type, receiver_id=receiver_id, sender_id=sender_id)
+
+@tool
+def send_message_tool(message: str, receiver_id: str, sender_id: str, conversation_id: str) -> str:
     """
     Send a message to a user/friend.
     You must provide:
     - message: the content of the message to send
     - receiver_id: the ID of the recipient user (get this by first calling search_friends_tool)
     - sender_id: the ID of the current user sending the message
+    - conversation_id: the ID of the conversation to send the message to (get this by first calling create_conversation_tool)
     Returns a status string indicating if the message was sent successfully.
     """
-    return send_message(message=message, sender_id=sender_id, receiver_id=receiver_id)
+    return send_message(message=message, sender_id=sender_id, receiver_id=receiver_id, conversation_id=conversation_id)
 
 def init_rag():
     global global_llm, global_retriever
@@ -78,9 +92,9 @@ def ask_question(message: str, sender_id: str = None) -> str:
         return "I'm sorry, the chatbot helper service is currently offline. Please check back later!"
         
     try:
-        # Bind tools to the LLM
-        tools = [search_friends_tool, send_message_tool]
-        llm_with_tools = global_llm.bind_tools(tools)
+        # Bind tools to the LLM (disabling parallel tool calls to ensure sequential dependencies)
+        tools = [search_friends_tool, create_conversation_tool, send_message_tool]
+        llm_with_tools = global_llm.bind_tools(tools, parallel_tool_calls=False)
         
         # Retrieve FAQ context
         formatted_context = "No FAQ context available."
@@ -101,9 +115,10 @@ def ask_question(message: str, sender_id: str = None) -> str:
             "3. If the context does not answer the question, or if the question is general (e.g., greetings, how are you, etc.), "
             "answer politely using your general knowledge, keeping in character as Bubble's assistant.\n"
             "4. Do NOT mention words like 'context', 'retrieved documents', 'FAQ database', or similar. Make your answers feel direct and natural.\n"
-            "5. If the user wants to send a message (e.g., 'send hi to Hemant' or 'say hello to ishant'), you MUST call the tools to perform this request.\n"
-            "   - First, call search_friends_tool with the recipient's name to find their receiver_id.\n"
-            "   - Once you get the search results containing the recipient's ID, call send_message_tool with the message, receiver_id, and the sender_id.\n"
+            "5. If the user wants to send a message (e.g., 'send hi to Hemant' or 'say hello to ishant'), you MUST follow these sequential steps:\n"
+            "   - Step 1: Call search_friends_tool with the recipient's name to find their receiver_id.\n"
+            "   - Step 2: Once you have the receiver_id, call create_conversation_tool with type='direct', receiver_id. This will return a JSON string containing the 'conversationId'.\n"
+            "   - Step 3: Extract the 'conversationId' from the JSON response and call send_message_tool with the message, receiver_id, sender_id, and conversation_id (using the conversationId you just obtained).\n"
             "   - If no user is found or there are multiple matches, ask the user to clarify.\n"
             "   - Note: The current user's ID (sender_id) is: {sender_id}.\n"
             "   - If the sender_id is not available (i.e. 'None' or empty), politely ask the user for their sender ID or inform them you cannot send the message without it.\n\n"
@@ -120,13 +135,19 @@ def ask_question(message: str, sender_id: str = None) -> str:
         
         tool_map = {
             "search_friends_tool": search_friends_tool,
+            "create_conversation_tool": create_conversation_tool,
             "send_message_tool": send_message_tool
         }
         
         max_iterations = 5
-        for _ in range(max_iterations):
+        for i in range(max_iterations):
+            print(f"\n--- Iteration {i+1} ---")
             response = llm_with_tools.invoke(messages)
             messages.append(response)
+            
+            print(f"[LLM Response] Content: {response.content}")
+            if response.tool_calls:
+                print(f"[LLM Tool Calls]: {response.tool_calls}")
             
             if not response.tool_calls:
                 return response.content
@@ -136,6 +157,8 @@ def ask_question(message: str, sender_id: str = None) -> str:
                 tool_args = tool_call["args"]
                 tool_id = tool_call["id"]
                 
+                print(f"[Tool Call] Invoking '{tool_name}' with args: {tool_args}")
+                
                 if tool_name in tool_map:
                     try:
                         tool_output = tool_map[tool_name].invoke(tool_args)
@@ -144,6 +167,7 @@ def ask_question(message: str, sender_id: str = None) -> str:
                 else:
                     tool_output = f"Tool {tool_name} is not available."
                     
+                print(f"[Tool Output] Result from '{tool_name}': {tool_output}")
                 messages.append(ToolMessage(content=str(tool_output), tool_call_id=tool_id))
                 
         # If we exceed max_iterations, return the content of the last AI message

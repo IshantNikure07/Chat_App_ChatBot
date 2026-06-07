@@ -14,6 +14,7 @@ def search_friends(name: str) -> str:
     try: 
         res = requests.get(api_url, headers=headers)
         data = res.json()
+        print("search friends response", data , "payload" , {"name": name})
         return str(data)
     except Exception as e:
         return f"Error searching friends: {str(e)}"
